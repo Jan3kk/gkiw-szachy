@@ -37,6 +37,8 @@
     <None Include="f_lit.glsl" />
     <None Include="v_tex.glsl" />
     <None Include="f_tex.glsl" />
+    <None Include="v_depth.glsl" />
+    <None Include="f_depth.glsl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

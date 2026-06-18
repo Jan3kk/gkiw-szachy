@@ -61,5 +61,11 @@
     <None Include="f_tex.glsl">
       <Filter>Pliki zasobów</Filter>
     </None>
+    <None Include="v_depth.glsl">
+      <Filter>Pliki zasobów</Filter>
+    </None>
+    <None Include="f_depth.glsl">
+      <Filter>Pliki zasobów</Filter>
+    </None>
   </ItemGroup>
 </Project>

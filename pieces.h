@@ -15,12 +15,22 @@
 struct Mesh {
     std::vector<float> verts;   // x,y,z na wierzcholek
     std::vector<float> norms;   // nx,ny,nz na wierzcholek
+    std::vector<float> tex;     // u,v (opcjonalne - tekstury)
+    std::vector<float> tans;    // tx,ty,tz (opcjonalne - wektor styczny do normal mappingu)
     int count = 0;              // liczba wierzcholkow
 };
 
 inline void pushVN(Mesh& m, const glm::vec3& p, const glm::vec3& n) {
     m.verts.push_back(p.x); m.verts.push_back(p.y); m.verts.push_back(p.z);
     m.norms.push_back(n.x); m.norms.push_back(n.y); m.norms.push_back(n.z);
+}
+
+// Jak pushVN, ale dodatkowo zapisuje wspolrzedne tekstury i wektor styczny
+inline void pushVNTT(Mesh& m, const glm::vec3& p, const glm::vec3& n, const glm::vec2& uv, const glm::vec3& t) {
+    m.verts.push_back(p.x); m.verts.push_back(p.y); m.verts.push_back(p.z);
+    m.norms.push_back(n.x); m.norms.push_back(n.y); m.norms.push_back(n.z);
+    m.tex.push_back(uv.x); m.tex.push_back(uv.y);
+    m.tans.push_back(t.x); m.tans.push_back(t.y); m.tans.push_back(t.z);
 }
 
 // Bryla obrotowa z profilu prof[i] = (promien, wysokosc), obracanego w 'seg' krokach.
@@ -59,8 +69,17 @@ inline Mesh makeLathe(const std::vector<glm::vec2>& prof, int seg) {
             glm::vec3 N11(n2[i + 1].x * c1, n2[i + 1].y, n2[i + 1].x * s1);
             glm::vec3 N01(n2[i].x * c1, n2[i].y, n2[i].x * s1);
 
-            pushVN(m, p00, N00); pushVN(m, p10, N10); pushVN(m, p11, N11);
-            pushVN(m, p00, N00); pushVN(m, p11, N11); pushVN(m, p01, N01);
+            // UV: u wokol osi, v wzdluz profilu; tangent = kierunek "wokol osi"
+            float u0 = (float)j / seg, u1 = (float)(j + 1) / seg;
+            float v0 = (float)i / (N - 1), v1 = (float)(i + 1) / (N - 1);
+            glm::vec3 t0(-s0, 0.0f, c0), t1(-s1, 0.0f, c1);
+
+            pushVNTT(m, p00, N00, glm::vec2(u0, v0), t0);
+            pushVNTT(m, p10, N10, glm::vec2(u0, v1), t0);
+            pushVNTT(m, p11, N11, glm::vec2(u1, v1), t1);
+            pushVNTT(m, p00, N00, glm::vec2(u0, v0), t0);
+            pushVNTT(m, p11, N11, glm::vec2(u1, v1), t1);
+            pushVNTT(m, p01, N01, glm::vec2(u1, v0), t1);
         }
     }
     m.count = (int)m.verts.size() / 3;
@@ -77,29 +96,55 @@ inline Mesh makeSphere(float r, int stacks, int sectors) {
     return makeLathe(prof, sectors);
 }
 
-// Prostopadloscian o wymiarach sx,sy,sz wysrodkowany w (0,0,0), normalne na sciany
+// Prostopadloscian sx,sy,sz wysrodkowany w (0,0,0): pozycje, normalne, UV i wektory styczne.
+// Tangent na kazdej scianie wskazuje kierunek rosnacego U (potrzebny do normal mappingu).
 inline Mesh makeBox(float sx, float sy, float sz) {
     Mesh m;
     float x = sx * 0.5f, y = sy * 0.5f, z = sz * 0.5f;
     glm::vec3 nPX(1, 0, 0), nNX(-1, 0, 0), nPY(0, 1, 0), nNY(0, -1, 0), nPZ(0, 0, 1), nNZ(0, 0, -1);
+    glm::vec3 tPX(0, 0, 1), tNX(0, 0, -1), tPY(1, 0, 0), tNY(1, 0, 0), tPZ(1, 0, 0), tNZ(-1, 0, 0);
     // +X
-    pushVN(m, glm::vec3(x, -y, -z), nPX); pushVN(m, glm::vec3(x, -y, z), nPX); pushVN(m, glm::vec3(x, y, z), nPX);
-    pushVN(m, glm::vec3(x, -y, -z), nPX); pushVN(m, glm::vec3(x, y, z), nPX); pushVN(m, glm::vec3(x, y, -z), nPX);
+    pushVNTT(m, glm::vec3(x, -y, -z), nPX, glm::vec2(0, 0), tPX);
+    pushVNTT(m, glm::vec3(x, -y, z), nPX, glm::vec2(1, 0), tPX);
+    pushVNTT(m, glm::vec3(x, y, z), nPX, glm::vec2(1, 1), tPX);
+    pushVNTT(m, glm::vec3(x, -y, -z), nPX, glm::vec2(0, 0), tPX);
+    pushVNTT(m, glm::vec3(x, y, z), nPX, glm::vec2(1, 1), tPX);
+    pushVNTT(m, glm::vec3(x, y, -z), nPX, glm::vec2(0, 1), tPX);
     // -X
-    pushVN(m, glm::vec3(-x, -y, z), nNX); pushVN(m, glm::vec3(-x, -y, -z), nNX); pushVN(m, glm::vec3(-x, y, -z), nNX);
-    pushVN(m, glm::vec3(-x, -y, z), nNX); pushVN(m, glm::vec3(-x, y, -z), nNX); pushVN(m, glm::vec3(-x, y, z), nNX);
+    pushVNTT(m, glm::vec3(-x, -y, z), nNX, glm::vec2(0, 0), tNX);
+    pushVNTT(m, glm::vec3(-x, -y, -z), nNX, glm::vec2(1, 0), tNX);
+    pushVNTT(m, glm::vec3(-x, y, -z), nNX, glm::vec2(1, 1), tNX);
+    pushVNTT(m, glm::vec3(-x, -y, z), nNX, glm::vec2(0, 0), tNX);
+    pushVNTT(m, glm::vec3(-x, y, -z), nNX, glm::vec2(1, 1), tNX);
+    pushVNTT(m, glm::vec3(-x, y, z), nNX, glm::vec2(0, 1), tNX);
     // +Y
-    pushVN(m, glm::vec3(-x, y, z), nPY); pushVN(m, glm::vec3(x, y, z), nPY); pushVN(m, glm::vec3(x, y, -z), nPY);
-    pushVN(m, glm::vec3(-x, y, z), nPY); pushVN(m, glm::vec3(x, y, -z), nPY); pushVN(m, glm::vec3(-x, y, -z), nPY);
+    pushVNTT(m, glm::vec3(-x, y, z), nPY, glm::vec2(0, 1), tPY);
+    pushVNTT(m, glm::vec3(x, y, z), nPY, glm::vec2(1, 1), tPY);
+    pushVNTT(m, glm::vec3(x, y, -z), nPY, glm::vec2(1, 0), tPY);
+    pushVNTT(m, glm::vec3(-x, y, z), nPY, glm::vec2(0, 1), tPY);
+    pushVNTT(m, glm::vec3(x, y, -z), nPY, glm::vec2(1, 0), tPY);
+    pushVNTT(m, glm::vec3(-x, y, -z), nPY, glm::vec2(0, 0), tPY);
     // -Y
-    pushVN(m, glm::vec3(-x, -y, -z), nNY); pushVN(m, glm::vec3(x, -y, -z), nNY); pushVN(m, glm::vec3(x, -y, z), nNY);
-    pushVN(m, glm::vec3(-x, -y, -z), nNY); pushVN(m, glm::vec3(x, -y, z), nNY); pushVN(m, glm::vec3(-x, -y, z), nNY);
+    pushVNTT(m, glm::vec3(-x, -y, -z), nNY, glm::vec2(0, 1), tNY);
+    pushVNTT(m, glm::vec3(x, -y, -z), nNY, glm::vec2(1, 1), tNY);
+    pushVNTT(m, glm::vec3(x, -y, z), nNY, glm::vec2(1, 0), tNY);
+    pushVNTT(m, glm::vec3(-x, -y, -z), nNY, glm::vec2(0, 1), tNY);
+    pushVNTT(m, glm::vec3(x, -y, z), nNY, glm::vec2(1, 0), tNY);
+    pushVNTT(m, glm::vec3(-x, -y, z), nNY, glm::vec2(0, 0), tNY);
     // +Z
-    pushVN(m, glm::vec3(-x, -y, z), nPZ); pushVN(m, glm::vec3(x, -y, z), nPZ); pushVN(m, glm::vec3(x, y, z), nPZ);
-    pushVN(m, glm::vec3(-x, -y, z), nPZ); pushVN(m, glm::vec3(x, y, z), nPZ); pushVN(m, glm::vec3(-x, y, z), nPZ);
+    pushVNTT(m, glm::vec3(-x, -y, z), nPZ, glm::vec2(0, 0), tPZ);
+    pushVNTT(m, glm::vec3(x, -y, z), nPZ, glm::vec2(1, 0), tPZ);
+    pushVNTT(m, glm::vec3(x, y, z), nPZ, glm::vec2(1, 1), tPZ);
+    pushVNTT(m, glm::vec3(-x, -y, z), nPZ, glm::vec2(0, 0), tPZ);
+    pushVNTT(m, glm::vec3(x, y, z), nPZ, glm::vec2(1, 1), tPZ);
+    pushVNTT(m, glm::vec3(-x, y, z), nPZ, glm::vec2(0, 1), tPZ);
     // -Z
-    pushVN(m, glm::vec3(x, -y, -z), nNZ); pushVN(m, glm::vec3(-x, -y, -z), nNZ); pushVN(m, glm::vec3(-x, y, -z), nNZ);
-    pushVN(m, glm::vec3(x, -y, -z), nNZ); pushVN(m, glm::vec3(-x, y, -z), nNZ); pushVN(m, glm::vec3(x, y, -z), nNZ);
+    pushVNTT(m, glm::vec3(x, -y, -z), nNZ, glm::vec2(0, 0), tNZ);
+    pushVNTT(m, glm::vec3(-x, -y, -z), nNZ, glm::vec2(1, 0), tNZ);
+    pushVNTT(m, glm::vec3(-x, y, -z), nNZ, glm::vec2(1, 1), tNZ);
+    pushVNTT(m, glm::vec3(x, -y, -z), nNZ, glm::vec2(0, 0), tNZ);
+    pushVNTT(m, glm::vec3(-x, y, -z), nNZ, glm::vec2(1, 1), tNZ);
+    pushVNTT(m, glm::vec3(x, y, -z), nNZ, glm::vec2(0, 1), tNZ);
     m.count = (int)m.verts.size() / 3;
     return m;
 }

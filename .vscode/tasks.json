@@ -4,14 +4,13 @@
         {
             "label": "build (Debug x64)",
             "type": "process",
-            "command": "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\MSBuild\\Current\\Bin\\MSBuild.exe",
+            "command": "powershell",
             "args": [
-                "${workspaceFolder}\\gkiw_nst_08_win.vcxproj",
-                "/p:Configuration=Debug",
-                "/p:Platform=x64",
-                "/m",
-                "/nologo",
-                "/v:minimal"
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-Command",
+                "$pf = [Environment]::GetEnvironmentVariable('ProgramFiles(x86)'); $vw = Join-Path $pf 'Microsoft Visual Studio\\Installer\\vswhere.exe'; $msb = & $vw -latest -prerelease -requires Microsoft.Component.MSBuild -find 'MSBuild\\**\\Bin\\MSBuild.exe' | Select-Object -First 1; if (-not $msb) { Write-Error 'Nie znaleziono MSBuild. Zainstaluj Visual Studio z obciazeniem Desktop development with C++.'; exit 1 }; & $msb '${workspaceFolder}\\gkiw_nst_08_win.vcxproj' /p:Configuration=Debug /p:Platform=x64 /m /nologo /v:minimal"
             ],
             "group": {
                 "kind": "build",
@@ -26,14 +25,13 @@
         {
             "label": "build (Release x64)",
             "type": "process",
-            "command": "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\MSBuild\\Current\\Bin\\MSBuild.exe",
+            "command": "powershell",
             "args": [
-                "${workspaceFolder}\\gkiw_nst_08_win.vcxproj",
-                "/p:Configuration=Release",
-                "/p:Platform=x64",
-                "/m",
-                "/nologo",
-                "/v:minimal"
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-Command",
+                "$pf = [Environment]::GetEnvironmentVariable('ProgramFiles(x86)'); $vw = Join-Path $pf 'Microsoft Visual Studio\\Installer\\vswhere.exe'; $msb = & $vw -latest -prerelease -requires Microsoft.Component.MSBuild -find 'MSBuild\\**\\Bin\\MSBuild.exe' | Select-Object -First 1; if (-not $msb) { Write-Error 'Nie znaleziono MSBuild. Zainstaluj Visual Studio z obciazeniem Desktop development with C++.'; exit 1 }; & $msb '${workspaceFolder}\\gkiw_nst_08_win.vcxproj' /p:Configuration=Release /p:Platform=x64 /m /nologo /v:minimal"
             ],
             "group": "build",
             "problemMatcher": "$msCompile",

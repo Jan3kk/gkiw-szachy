@@ -1,0 +1,25 @@
+{
+    "version": 4,
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/glew-2.3.1/include",
+                "${workspaceFolder}/glfw-3.4.bin/include",
+                "${workspaceFolder}/glm"
+            ],
+            "defines": [
+                "_DEBUG",
+                "_CONSOLE",
+                "GLEW_STATIC",
+                "_UNICODE",
+                "UNICODE"
+            ],
+            "windowsSdkVersion": "10.0",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "windows-msvc-x64"
+        }
+    ]
+}

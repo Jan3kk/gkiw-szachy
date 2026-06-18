@@ -30,6 +30,12 @@
 	<ClInclude Include="myTeapot.h">
       <Filter>Pliki nagłówkowe</Filter>
     </ClInclude>
+    <ClInclude Include="pieces.h">
+      <Filter>Pliki nagłówkowe</Filter>
+    </ClInclude>
+    <ClInclude Include="chess.h">
+      <Filter>Pliki nagłówkowe</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="lodepng.cpp">
@@ -43,10 +49,16 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="f_simplest.glsl">
+    <None Include="v_lit.glsl">
       <Filter>Pliki zasobów</Filter>
     </None>
-	<None Include="v_simplest.glsl">
+    <None Include="f_lit.glsl">
+      <Filter>Pliki zasobów</Filter>
+    </None>
+    <None Include="v_tex.glsl">
+      <Filter>Pliki zasobów</Filter>
+    </None>
+    <None Include="f_tex.glsl">
       <Filter>Pliki zasobów</Filter>
     </None>
   </ItemGroup>

@@ -1,0 +1,12 @@
+# Format: <pole_zrodlowe> <pole_docelowe> [figura_promocji]
+#   - bicie, roszada i en passant wykrywane sa automatycznie
+#   - bialy zaczyna, kolory naprzemiennie
+#   - linie zaczynajace sie od '#' i puste sa omijane
+
+e2 e4    # bialy pionek
+e7 e5    # czarny pionek
+f1 c4    # bialy goniec
+b8 c6    # czarny skoczek
+d1 h5    # bialy hetman
+g8 f6    # czarny skoczek
+h5 f7    # hetman bije pionka f7 - mat

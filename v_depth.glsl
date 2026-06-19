@@ -1,7 +1,6 @@
 #version 330
 
-// Przebieg glebii (shadow map): rzutujemy wierzcholki z punktu widzenia swiatla.
-uniform mat4 MVP; // lightSpaceMatrix * M
+uniform mat4 MVP;
 
 in vec4 vertex;
 

@@ -7,71 +7,58 @@
 #include <fstream>
 #include <cctype>
 
-enum PType
+enum PieceType
 {
-	PT_EMPTY = 0,
-	PT_PAWN,
-	PT_KNIGHT,
-	PT_BISHOP,
-	PT_ROOK,
-	PT_QUEEN,
-	PT_KING
+	PIECE_NONE = 0,
+	PIECE_PAWN,
+	PIECE_KNIGHT,
+	PIECE_BISHOP,
+	PIECE_ROOK,
+	PIECE_QUEEN,
+	PIECE_KING
 };
 
-enum PColor
+enum PieceColor
 {
-	PC_NONE = 0,
-	PC_WHITE,
-	PC_BLACK
+	COLOR_NONE = 0,
+	COLOR_WHITE,
+	COLOR_BLACK
 };
 
 struct Move
 {
-	int ff = 0, fr = 0;	  // pole zrodlowe (from)
-	int tf = 0, tr = 0;	  // pole docelowe (to)
-	bool castleK = false; // roszada krotka  (O-O)
-	bool castleQ = false; // roszada dluga   (O-O-O)
-	int promo = PT_EMPTY; // figura promocji (lub PT_EMPTY)
+	int fromFile = 0, fromRank = 0;
+	int toFile = 0, toRank = 0;
+	bool castleKingside = false;
+	bool castleQueenside = false;
+	int promotion = PIECE_NONE;
 };
 
-// Zamienia literke figury na typ (do promocji)
-inline int charToType(char c)
+inline int letterToPieceType(char c)
 {
 	switch (std::toupper((unsigned char)c))
 	{
-	case 'Q':
-		return PT_QUEEN;
-	case 'R':
-		return PT_ROOK;
-	case 'B':
-		return PT_BISHOP;
-	case 'N':
-		return PT_KNIGHT;
-	default:
-		return PT_EMPTY;
+	case 'Q': return PIECE_QUEEN;
+	case 'R': return PIECE_ROOK;
+	case 'B': return PIECE_BISHOP;
+	case 'N': return PIECE_KNIGHT;
+	default:  return PIECE_NONE;
 	}
 }
 
-// Parsuje pole typu "e2" -> (file, rank). Zwraca false gdy niepoprawne.
-inline bool parseSquare(const std::string &s, int &f, int &r)
+inline bool parseSquare(const std::string &text, int &file, int &rank)
 {
-	if (s.size() < 2)
+	if (text.size() < 2)
 		return false;
-	int file = std::tolower((unsigned char)s[0]) - 'a';
-	int rank = s[1] - '1';
-	if (file < 0 || file > 7 || rank < 0 || rank > 7)
+	int f = std::tolower((unsigned char)text[0]) - 'a';
+	int r = text[1] - '1';
+	if (f < 0 || f > 7 || r < 0 || r > 7)
 		return false;
-	f = file;
-	r = rank;
+	file = f;
+	rank = r;
 	return true;
 }
 
-// Wczytuje partie z pliku. Format (jeden ruch na linie):
-//   e2 e4            - ruch/bicie (bicie wykrywane automatycznie)
-//   e7 e8 Q          - ruch z promocja na hetmana
-//   e2e4             - dozwolony zapis bez spacji
-//   O-O / O-O-O      - roszada krotka / dluga
-//   # ...            - komentarz (do konca linii), puste linie pomijane
 inline bool parseGame(const std::string &path, std::vector<Move> &moves, std::string &err)
 {
 	std::ifstream in(path.c_str());
@@ -82,97 +69,92 @@ inline bool parseGame(const std::string &path, std::vector<Move> &moves, std::st
 	}
 
 	std::string line;
-	int lineNo = 0;
+	int lineNumber = 0;
 	while (std::getline(in, line))
 	{
-		lineNo++;
-		size_t h = line.find('#');
-		if (h != std::string::npos)
-			line = line.substr(0, h);
+		lineNumber++;
+		size_t commentPos = line.find('#');
+		if (commentPos != std::string::npos)
+			line = line.substr(0, commentPos);
 
-		std::vector<std::string> tok;
-		std::istringstream iss(line);
-		std::string w;
-		while (iss >> w)
-			tok.push_back(w);
-		if (tok.empty())
+		std::vector<std::string> tokens;
+		std::istringstream stream(line);
+		std::string word;
+		while (stream >> word)
+			tokens.push_back(word);
+		if (tokens.empty())
 			continue;
 
-		Move mv;
-		std::string a = tok[0];
+		Move move;
+		std::string first = tokens[0];
 
-		if (a == "O-O" || a == "0-0")
+		if (first == "O-O" || first == "0-0")
 		{
-			mv.castleK = true;
-			moves.push_back(mv);
+			move.castleKingside = true;
+			moves.push_back(move);
 			continue;
 		}
-		if (a == "O-O-O" || a == "0-0-0")
+		if (first == "O-O-O" || first == "0-0-0")
 		{
-			mv.castleQ = true;
-			moves.push_back(mv);
+			move.castleQueenside = true;
+			moves.push_back(move);
 			continue;
 		}
 
-		std::string from, to, promo;
-		bool packed = a.size() >= 4 &&
-					  std::isalpha((unsigned char)a[0]) && std::isdigit((unsigned char)a[1]) &&
-					  std::isalpha((unsigned char)a[2]) && std::isdigit((unsigned char)a[3]);
+		std::string from, to, promotion;
+		bool packed = first.size() >= 4 &&
+					  std::isalpha((unsigned char)first[0]) && std::isdigit((unsigned char)first[1]) &&
+					  std::isalpha((unsigned char)first[2]) && std::isdigit((unsigned char)first[3]);
 		if (packed)
 		{
-			from = a.substr(0, 2);
-			to = a.substr(2, 2);
-			if (a.size() >= 5)
-				promo = a.substr(4, 1);
-			else if (tok.size() >= 2)
-				promo = tok[1];
+			from = first.substr(0, 2);
+			to = first.substr(2, 2);
+			if (first.size() >= 5)
+				promotion = first.substr(4, 1);
+			else if (tokens.size() >= 2)
+				promotion = tokens[1];
 		}
 		else
 		{
-			if (tok.size() < 2)
+			if (tokens.size() < 2)
 			{
-				err = "Niepelny ruch w linii " + std::to_string(lineNo);
+				err = "Niepelny ruch w linii " + std::to_string(lineNumber);
 				return false;
 			}
-			from = tok[0];
-			to = tok[1];
-			if (tok.size() >= 3)
-				promo = tok[2];
+			from = tokens[0];
+			to = tokens[1];
+			if (tokens.size() >= 3)
+				promotion = tokens[2];
 		}
 
-		if (!parseSquare(from, mv.ff, mv.fr) || !parseSquare(to, mv.tf, mv.tr))
+		if (!parseSquare(from, move.fromFile, move.fromRank) || !parseSquare(to, move.toFile, move.toRank))
 		{
-			err = "Zla notacja pola w linii " + std::to_string(lineNo);
+			err = "Zla notacja pola w linii " + std::to_string(lineNumber);
 			return false;
 		}
-		if (!promo.empty())
-			mv.promo = charToType(promo[0]);
-		moves.push_back(mv);
+		if (!promotion.empty())
+			move.promotion = letterToPieceType(promotion[0]);
+		moves.push_back(move);
 	}
 	return true;
 }
 
-// Wypelnia ustawienie poczatkowe: type[file][rank], color[file][rank].
-inline void startingPosition(PType type[8][8], PColor color[8][8])
+inline void startingPosition(PieceType pieceType[8][8], PieceColor pieceColor[8][8])
 {
-	for (int f = 0; f < 8; f++)
-		for (int r = 0; r < 8; r++)
+	for (int file = 0; file < 8; file++)
+		for (int rank = 0; rank < 8; rank++)
 		{
-			type[f][r] = PT_EMPTY;
-			color[f][r] = PC_NONE;
+			pieceType[file][rank] = PIECE_NONE;
+			pieceColor[file][rank] = COLOR_NONE;
 		}
 
-	PType back[8] = {PT_ROOK, PT_KNIGHT, PT_BISHOP, PT_QUEEN, PT_KING, PT_BISHOP, PT_KNIGHT, PT_ROOK};
-	for (int f = 0; f < 8; f++)
+	PieceType backRank[8] = {PIECE_ROOK, PIECE_KNIGHT, PIECE_BISHOP, PIECE_QUEEN, PIECE_KING, PIECE_BISHOP, PIECE_KNIGHT, PIECE_ROOK};
+	for (int file = 0; file < 8; file++)
 	{
-		type[f][0] = back[f];
-		color[f][0] = PC_WHITE; // 1. rzad - biale figury
-		type[f][1] = PT_PAWN;
-		color[f][1] = PC_WHITE; // 2. rzad - biale pionki
-		type[f][6] = PT_PAWN;
-		color[f][6] = PC_BLACK; // 7. rzad - czarne pionki
-		type[f][7] = back[f];
-		color[f][7] = PC_BLACK; // 8. rzad - czarne figury
+		pieceType[file][0] = backRank[file]; pieceColor[file][0] = COLOR_WHITE;
+		pieceType[file][1] = PIECE_PAWN;     pieceColor[file][1] = COLOR_WHITE;
+		pieceType[file][6] = PIECE_PAWN;     pieceColor[file][6] = COLOR_BLACK;
+		pieceType[file][7] = backRank[file]; pieceColor[file][7] = COLOR_BLACK;
 	}
 }
 

@@ -1,15 +1,15 @@
 #version 330
 
-uniform vec4 color;         // kolor/odcien materialu (mnozony przez teksture)
-uniform vec3 lc0;           // kolor swiatla 0 (glowne, chlodne) - rzuca cien
-uniform vec3 lc1;           // kolor swiatla 1 (slabe wypelnienie)
-uniform vec3 ambientColor;  // swiatlo otoczenia (nocny, niebieskawy)
-uniform float specStrength; // sila odblaskow materialu (0 = matowy)
-uniform int useTex;         // 1 = uzyj tekstur (color/normal/roughness), 0 = jednolity kolor
+uniform vec4 color;
+uniform vec3 lc0;
+uniform vec3 lc1;
+uniform vec3 ambientColor;
+uniform float specStrength;
+uniform int useTex;
 uniform sampler2D shadowMap;
-uniform sampler2D diffuseMap; // kolor (albedo)
-uniform sampler2D normalMap;  // mapa normalnych (faktura)
-uniform sampler2D roughMap;   // szorstkosc (steruje polyskiem)
+uniform sampler2D diffuseMap;
+uniform sampler2D normalMap;
+uniform sampler2D roughMap;
 
 in vec3 vN;
 in vec3 vT;
@@ -21,7 +21,6 @@ in vec2 iTex;
 
 out vec4 pixelColor;
 
-// 1.0 = w pelni oswietlone, 0.0 = w pelnym cieniu (dla swiatla glownego). PCF 3x3 = miekko.
 float shadowFactor(vec3 n, vec3 l0)
 {
 	vec3 p = vShadowCoord.xyz / vShadowCoord.w;
@@ -53,14 +52,13 @@ void main(void)
 	if (useTex == 1)
 	{
 		albedo = texture(diffuseMap, iTex).rgb * color.rgb;
-		// Macierz TBN (styczna -> oko) i normalna z mapy normalnych
 		vec3 Ng = normalize(vN);
-		vec3 T = normalize(vT - dot(vT, Ng) * Ng); // ortogonalizacja
+		vec3 T = normalize(vT - dot(vT, Ng) * Ng);
 		vec3 B = cross(Ng, T);
 		vec3 nm = texture(normalMap, iTex).xyz * 2.0 - 1.0;
 		n = normalize(mat3(T, B, Ng) * nm);
 		float rough = texture(roughMap, iTex).r;
-		specS = specStrength * (1.0 - rough); // gladsze miejsca = mocniejszy odblask
+		specS = specStrength * (1.0 - rough);
 	}
 	else
 	{
@@ -75,7 +73,7 @@ void main(void)
 	float s0 = pow(max(dot(r0, v), 0.0), 24.0);
 	float s1 = pow(max(dot(r1, v), 0.0), 24.0);
 
-	float sh = shadowFactor(n, l0); // cien tylko od swiatla glownego
+	float sh = shadowFactor(n, l0);
 
 	vec3 lit = albedo * ambientColor
 			 + albedo * (lc0 * d0 * sh + lc1 * d1)

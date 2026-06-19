@@ -1,15 +1,12 @@
 #version 330
 
-//Zmienne jednorodne
 uniform mat4 P;
 uniform mat4 V;
 uniform mat4 M;
 
-//Atrybuty
-in vec4 vertex; //wspolrzedne wierzcholka w przestrzeni modelu
-in vec2 texCoord0; //wspolrzedne teksturowania
+in vec4 vertex;
+in vec2 texCoord0;
 
-//Zmienne interpolowane
 out vec2 iTexCoord0;
 
 void main(void) {
